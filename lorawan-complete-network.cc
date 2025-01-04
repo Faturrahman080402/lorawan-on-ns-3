@@ -1,17 +1,3 @@
-/*
- * Copyright (c) 2017 University of Padova
- *
- * SPDX-License-Identifier: GPL-2.0-only
- *
- * Author: Davide Magrin <magrinda@dei.unipd.it>
- */
-
-/*
- * This script simulates a complex scenario with multiple gateways and end
- * devices. The metric of interest for this script is the throughput of the
- * network.
- */
-
 #include "ns3/building-allocator.h"
 #include "ns3/building-penetration-loss.h"
 #include "ns3/buildings-helper.h"
@@ -44,25 +30,25 @@ using namespace lorawan;
 NS_LOG_COMPONENT_DEFINE("ComplexLorawanNetworkExample");
 
 // Network settings
-int nDevices = 4;                   //!< Number of end device nodes to create
+int nClient = 4;                 //!< Number of end device nodes to create
 int nGateways = 2;                  //!< Number of gateway nodes to create
-int server = 1;                     //!< Number of server nodes to create
-double radiusMeters = 500;          //!< Radius (m) of the deployment
+double radiusMeters = 500;         //!< Radius (m) of the deployment
 double simulationTimeSeconds = 100; //!< Scenario duration (s) in simulated time
 
 // Channel model
 bool realisticChannelModel = false; //!< Whether to use a more realistic channel model with
                                     //!< Buildings and correlated shadowing
 
-int appPeriodSeconds = 600; //!< Duration (s) of the inter-transmission time of end devices
+int appPeriodSeconds = 100; //!< Duration (s) of the inter-transmission time of end devices
 
 // Output control
 bool printBuildingInfo = true; //!< Whether to print building information
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     CommandLine cmd(__FILE__);
-    cmd.AddValue("nDevices", "Number of end devices to include in the simulation", nDevices);
+    cmd.AddValue("nClient", "Number of end devices to include in the simulation", nClient);
     cmd.AddValue("radius", "The radius (m) of the area to simulate", radiusMeters);
     cmd.AddValue("realisticChannel",
                  "Whether to use a more realistic channel model",
@@ -78,13 +64,13 @@ int main(int argc, char *argv[])
     LogComponentEnable("ComplexLorawanNetworkExample", LOG_LEVEL_ALL);
     // LogComponentEnable("LoraChannel", LOG_LEVEL_INFO);
     // LogComponentEnable("LoraPhy", LOG_LEVEL_ALL);
-    // LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-    // LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
-    // LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
-    // LogComponentEnable("LorawanMac", LOG_LEVEL_ALL);
+    //LogComponentEnable("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+    //LogComponentEnable("GatewayLoraPhy", LOG_LEVEL_ALL);
+    /// LogComponentEnable("LoraInterferenceHelper", LOG_LEVEL_ALL);
+    //LogComponentEnable("LorawanMac", LOG_LEVEL_ALL);
     // LogComponentEnable("EndDeviceLorawanMac", LOG_LEVEL_ALL);
     // LogComponentEnable("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
-    // LogComponentEnable("GatewayLorawanMac", LOG_LEVEL_ALL);
+    //LogComponentEnable("GatewayLorawanMac", LOG_LEVEL_ALL);
     // LogComponentEnable("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
     // LogComponentEnable("LogicalLoraChannel", LOG_LEVEL_ALL);
     // LogComponentEnable("LoraHelper", LOG_LEVEL_ALL);
@@ -94,8 +80,8 @@ int main(int argc, char *argv[])
     // LogComponentEnable("PeriodicSender", LOG_LEVEL_ALL);
     // LogComponentEnable("LorawanMacHeader", LOG_LEVEL_ALL);
     // LogComponentEnable("LoraFrameHeader", LOG_LEVEL_ALL);
-    // LogComponentEnable("NetworkScheduler", LOG_LEVEL_ALL);
-    // LogComponentEnable("NetworkServer", LOG_LEVEL_ALL);
+    //LogComponentEnable("NetworkScheduler", LOG_LEVEL_ALL);
+    //LogComponentEnable("NetworkServer", LOG_LEVEL_ALL);
     // LogComponentEnable("NetworkStatus", LOG_LEVEL_ALL);
     // LogComponentEnable("NetworkController", LOG_LEVEL_ALL);
 
@@ -147,6 +133,7 @@ int main(int argc, char *argv[])
      ************************/
 
     // Create the LoraPhyHelper
+    LoraHelper lorahelper;
     LoraPhyHelper phyHelper = LoraPhyHelper();
     phyHelper.SetChannel(channel);
 
@@ -170,7 +157,7 @@ int main(int argc, char *argv[])
 
     // Create a set of nodes
     NodeContainer endDevices;
-    endDevices.Create(nDevices);
+    endDevices.Create(nClient);
 
     // Assign a mobility model to each node
     mobility.Install(endDevices);
@@ -192,7 +179,7 @@ int main(int argc, char *argv[])
 
     // Create the LoraNetDevices of the end devices
     macHelper.SetAddressGenerator(addrGen);
-    phyHelper.SetDeviceType(LoraPhyHelper::ED);
+    phyHelper.SetChannel(channel);
     macHelper.SetDeviceType(LorawanMacHelper::ED_A);
     helper.Install(phyHelper, macHelper, endDevices);
 
@@ -217,22 +204,8 @@ int main(int argc, char *argv[])
     Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator>();
     // Make it so that nodes are at a certain height > 0
     allocator->Add(Vector(0.0, 0.0, 15.0));
-    mobility.SetPositionAllocator("ns3::GridPositionAllocator"
-                                  "Minx",
-                                  DoubleValue(0.0),
-                                  "Miny", DoubleValue(0.0),
-                                  "Deltax", DoubleValue(100.0),
-                                  "Deltay", DoubleValue(0, 0),
-                                  "GridWidth", UintegerValue(3),
-                                  "LayoutType", StringValue("RowFirst"));
+    mobility.SetPositionAllocator(allocator);
     mobility.Install(gateways);
-
-    mobiliity.SetPositionAllocator("ns3:RandomDicsPositionAllocator",
-                                   "X", DoubleValue(100.0),
-                                   "Y", DoubleValue(100.0),
-                                   "Rho", DoubleValue(10.0));
-    mobility.SetPositionAllocator("ns3:ConstantPositionMobilityModel");
-    mobility.install(server);
 
     // Create a netdevice for each gateway
     phyHelper.SetDeviceType(LoraPhyHelper::GW);
@@ -363,7 +336,7 @@ int main(int argc, char *argv[])
     ///////////////////////////
     NS_LOG_INFO("Computing performance metrics...");
 
-    LoraPacketTracker &tracker = helper.GetPacketTracker();
+    LoraPacketTracker& tracker = helper.GetPacketTracker();
     std::cout << tracker.CountMacPacketsGlobally(Seconds(0), appStopTime + Hours(1)) << std::endl;
 
     return 0;
