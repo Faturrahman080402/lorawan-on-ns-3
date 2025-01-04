@@ -44,10 +44,11 @@ using namespace lorawan;
 NS_LOG_COMPONENT_DEFINE("ComplexLorawanNetworkExample");
 
 // Network settings
-int nDevices = 200;                 //!< Number of end device nodes to create
-int nGateways = 1;                  //!< Number of gateway nodes to create
-double radiusMeters = 6400;         //!< Radius (m) of the deployment
-double simulationTimeSeconds = 600; //!< Scenario duration (s) in simulated time
+int nDevices = 4;                   //!< Number of end device nodes to create
+int nGateways = 2;                  //!< Number of gateway nodes to create
+int server = 1;                     //!< Number of server nodes to create
+double radiusMeters = 500;          //!< Radius (m) of the deployment
+double simulationTimeSeconds = 100; //!< Scenario duration (s) in simulated time
 
 // Channel model
 bool realisticChannelModel = false; //!< Whether to use a more realistic channel model with
@@ -108,12 +109,9 @@ int main(int argc, char *argv[])
     // Mobility
     MobilityHelper mobility;
     mobility.SetPositionAllocator("ns3::UniformDiscPositionAllocator",
-                                  "rho",
-                                  DoubleValue(radiusMeters),
-                                  "X",
-                                  DoubleValue(0.0),
-                                  "Y",
-                                  DoubleValue(0.0));
+                                  "rho", DoubleValue(radiusMeters),
+                                  "X", DoubleValue(0.0),
+                                  "Y", DoubleValue(0.0));
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 
     /************************
@@ -219,8 +217,22 @@ int main(int argc, char *argv[])
     Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator>();
     // Make it so that nodes are at a certain height > 0
     allocator->Add(Vector(0.0, 0.0, 15.0));
-    mobility.SetPositionAllocator(allocator);
+    mobility.SetPositionAllocator("ns3::GridPositionAllocator"
+                                  "Minx",
+                                  DoubleValue(0.0),
+                                  "Miny", DoubleValue(0.0),
+                                  "Deltax", DoubleValue(100.0),
+                                  "Deltay", DoubleValue(0, 0),
+                                  "GridWidth", UintegerValue(3),
+                                  "LayoutType", StringValue("RowFirst"));
     mobility.Install(gateways);
+
+    mobiliity.SetPositionAllocator("ns3:RandomDicsPositionAllocator",
+                                   "X", DoubleValue(100.0),
+                                   "Y", DoubleValue(100.0),
+                                   "Rho", DoubleValue(10.0));
+    mobility.SetPositionAllocator("ns3:ConstantPositionMobilityModel");
+    mobility.install(server);
 
     // Create a netdevice for each gateway
     phyHelper.SetDeviceType(LoraPhyHelper::GW);
