@@ -30,8 +30,8 @@ using namespace lorawan;
 NS_LOG_COMPONENT_DEFINE("ComplexLorawanNetworkExample");
 
 // Network settings
-int nDevices = 200;                 //!< Number of end device nodes to create
-int nGateways = 1;                  //!< Number of gateway nodes to create
+int nDevices = 4;                   //!< Number of end device nodes to create
+int nGateways = 2;                  //!< Number of gateway nodes to create
 double radiusMeters = 6400;         //!< Radius (m) of the deployment
 double simulationTimeSeconds = 600; //!< Scenario duration (s) in simulated time
 
