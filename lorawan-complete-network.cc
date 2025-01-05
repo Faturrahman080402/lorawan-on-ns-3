@@ -1,17 +1,3 @@
-/*
- * Copyright (c) 2017 University of Padova
- *
- * SPDX-License-Identifier: GPL-2.0-only
- *
- * Author: Davide Magrin <magrinda@dei.unipd.it>
- */
-
-/*
- * This script simulates a complex scenario with multiple gateways and end
- * devices. The metric of interest for this script is the throughput of the
- * network.
- */
-
 #include "ns3/building-allocator.h"
 #include "ns3/building-penetration-loss.h"
 #include "ns3/buildings-helper.h"
@@ -44,11 +30,10 @@ using namespace lorawan;
 NS_LOG_COMPONENT_DEFINE("ComplexLorawanNetworkExample");
 
 // Network settings
-int nDevices = 4;                   //!< Number of end device nodes to create
-int nGateways = 2;                  //!< Number of gateway nodes to create
-int server = 1;                     //!< Number of server nodes to create
-double radiusMeters = 500;          //!< Radius (m) of the deployment
-double simulationTimeSeconds = 100; //!< Scenario duration (s) in simulated time
+int nDevices = 200;                 //!< Number of end device nodes to create
+int nGateways = 1;                  //!< Number of gateway nodes to create
+double radiusMeters = 6400;         //!< Radius (m) of the deployment
+double simulationTimeSeconds = 600; //!< Scenario duration (s) in simulated time
 
 // Channel model
 bool realisticChannelModel = false; //!< Whether to use a more realistic channel model with
@@ -109,9 +94,12 @@ int main(int argc, char *argv[])
     // Mobility
     MobilityHelper mobility;
     mobility.SetPositionAllocator("ns3::UniformDiscPositionAllocator",
-                                  "rho", DoubleValue(radiusMeters),
-                                  "X", DoubleValue(0.0),
-                                  "Y", DoubleValue(0.0));
+                                  "rho",
+                                  DoubleValue(radiusMeters),
+                                  "X",
+                                  DoubleValue(0.0),
+                                  "Y",
+                                  DoubleValue(0.0));
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 
     /************************
@@ -176,13 +164,13 @@ int main(int argc, char *argv[])
     mobility.Install(endDevices);
 
     // Make it so that nodes are at a certain height > 0
-    for (auto j = endDevices.Begin(); j != endDevices.End(); ++j)
-    {
-        Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel>();
-        Vector position = mobility->GetPosition();
-        position.z = 1.2;
-        mobility->SetPosition(position);
-    }
+    Ptr<ListPositionAllocator> endDevicePosition = CreateObject<ListPositionAllocator>();
+    endDevicePosition->Add(Vector(10.0, 20.0, 1.2)); // End device 1
+    endDevicePosition->Add(Vector(20.0, 40.0, 1.2)); // End device 2
+    endDevicePosition->Add(Vector(30.0, 60.0, 1.2)); // End device 3
+    endDevicePosition->Add(Vector(40.0, 80.0, 1.2)); // End device 4
+    mobility.SetPositionAllocator(endDevicePosition);
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 
     // Create the LoraNetDevices of the end devices
     uint8_t nwkId = 54;
@@ -190,50 +178,7 @@ int main(int argc, char *argv[])
     Ptr<LoraDeviceAddressGenerator> addrGen =
         CreateObject<LoraDeviceAddressGenerator>(nwkId, nwkAddr);
 
-    /*
-   // Membuat channel
-Ptr<LogDistancePropagationLossModel> loss = CreateObject<LogDistancePropagationLossModel>();
-loss->SetPathLossExponent(3.76);
-loss->SetReference(1, 7.7);
-
-Ptr<PropagationDelayModel> delay = CreateObject<ConstantSpeedPropagationDelayModel>();
-Ptr<Channel> channel = CreateObject<PropagationLossPropagationDelayModel>(loss, delay);
-
-// Membuat LoraHelper
-LoraHelper loraHelper;
-LoraPhyHelper phyHelper = LoraPhyHelper();
-LorawanMacHelper macHelper = LorawanMacHelper();
-
-// Menghubungkan channel ke PHY helper
-phyHelper.SetChannel(channel);
-
-// Atur MAC LoRa sebagai End Device
-macHelper.SetDeviceType(LorawanMacHelper::ED);
-
-// Instal PHY dan MAC pada end devices
-loraHelper.Install(phyHelper, macHelper, endDevices);
-
-// Instal network server
-NetworkServerHelper networkServerHelper;
-networkServerHelper.Install(networkServer);
-
-// Instal forwarder pada gateway
-ForwarderHelper forwarderHelper;
-forwarderHelper.Install(gateways);
-
-// Tambahkan aplikasi pada end devices
-PeriodicalSenderHelper appHelper = PeriodicalSenderHelper();
-appHelper.SetPeriod(Seconds(10));  // Perangkat mengirim data setiap 10 detik
-appHelper.Install(endDevices);
-
-// Jalankan simulasi
-Simulator::Run();
-Simulator::Destroy();
-
-    */
-
     // Create the LoraNetDevices of the end devices
-    macHelper.SetAddressGenerator(addrGen);
     phyHelper.SetDeviceType(LoraPhyHelper::ED);
     macHelper.SetDeviceType(LorawanMacHelper::ED_A);
     helper.Install(phyHelper, macHelper, endDevices);
@@ -256,25 +201,11 @@ Simulator::Destroy();
     NodeContainer gateways;
     gateways.Create(nGateways);
 
-    Ptr<ListPositionAllocator> allocator = CreateObject<ListPositionAllocator>();
-    // Make it so that nodes are at a certain height > 0
-    allocator->Add(Vector(0.0, 0.0, 15.0));
-    mobility.SetPositionAllocator("ns3::GridPositionAllocator"
-                                  "Minx",
-                                  DoubleValue(0.0),
-                                  "Miny", DoubleValue(0.0),
-                                  "Deltax", DoubleValue(100.0),
-                                  "Deltay", DoubleValue(0, 0),
-                                  "GridWidth", UintegerValue(3),
-                                  "LayoutType", StringValue("RowFirst"));
+    Ptr<ListPositionAllocator> gatewayPosition = CreateObject<ListPositionAllocator>();
+    gatewayPosition->Add(Vector(15.0, 30.0, 10.0)); // Gateway 1
+    gatewayPosition->Add(Vector(35.0, 70.0, 10.0)); // Gateway 2
+    mobility.SetPositionAllocator(gatewayPosition);
     mobility.Install(gateways);
-
-    mobiliity.SetPositionAllocator("ns3:RandomDicsPositionAllocator",
-                                   "X", DoubleValue(100.0),
-                                   "Y", DoubleValue(100.0),
-                                   "Rho", DoubleValue(10.0));
-    mobility.SetPositionAllocator("ns3:ConstantPositionMobilityModel");
-    mobility.install(server);
 
     // Create a netdevice for each gateway
     phyHelper.SetDeviceType(LoraPhyHelper::GW);
@@ -366,8 +297,9 @@ Simulator::Destroy();
      ***************************/
 
     // Create the network server node
-    Ptr<Node> networkServer = CreateObject<Node>();
-
+    Ptr<ListPositionAllocator> serverPosition = CreateObject<ListPositionAllocator>();
+    serverPosition->Add(Vector(25.0, 50.0, 5.0)); // Server position
+    mobility.SetPositionAllocator(serverPosition);
     // PointToPoint links between gateways and server
     PointToPointHelper p2p;
     p2p.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
@@ -388,6 +320,31 @@ Simulator::Destroy();
 
     // Create a forwarder for each gateway
     forHelper.Install(gateways);
+
+    // Install Internet stack and assign IP addresses
+    InternetStackHelper internet;
+    internet.Install(endDevices);
+    internet.Install(gateways);
+    internet.Install(networkServer);
+
+    Ipv4AddressHelper ipv4;
+    ipv4.SetBase("192.168.1.0", "255.255.255.0");
+    Ipv4InterfaceContainer deviceInterfaces = ipv4.Assign(endDevices.GetNDevices());
+    Ipv4InterfaceContainer gatewayInterfaces = ipv4.Assign(gateways.GetNDevices());
+    Ipv4InterfaceContainer serverInterfaces = ipv4.Assign(networkServer.GetNDevices());
+
+    // Create animation
+    AnimationInterface anim("lora-network.xml");
+    for (uint32_t i = 0; i < endDevices.GetN(); ++i)
+    {
+        anim.UpdateNodeColor(endDevices.Get(i), 255, 0, 0); // Red for end devices
+    }
+    for (uint32_t i = 0; i < gateways.GetN(); ++i)
+    {
+        anim.UpdateNodeColor(gateways.Get(i), 0, 255, 0); // Green for gateways
+    }
+    anim.UpdateNodeColor(networkServer.Get(0), 0, 0, 255); // Blue for server
+    anim.SetMaxPktsPerTraceFile(500000);
 
     ////////////////
     // Simulation //
