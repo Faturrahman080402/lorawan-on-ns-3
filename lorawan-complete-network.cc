@@ -20,6 +20,7 @@
 #include "ns3/position-allocator.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/simulator.h"
+#include "ns3/netanim-module.h"
 
 #include <algorithm>
 #include <ctime>
@@ -319,6 +320,30 @@ main(int argc, char* argv[])
 
     // Create a forwarder for each gateway
     forHelper.Install(gateways);
+
+    ////////////////
+    //  animation //
+    ////////////////
+
+    AnimationInterface anim("lora.xml");
+    for (uint32_t i = 0; i < nClient.GetN(); ++i)
+    {
+        anim.UpdateNodeSize(nClient.Get(i)->GetId(), 5.0, 5.0);
+        anim.UpdateNodeColor(nClient.Get(i), 0, 0, 255);
+        anim.UpdateNodeDescription(nClient.Get(i), "Client " + std::to_string(i + 1));
+    }
+
+    for (uint32_t i = 0; i < nGateways.GetN(); ++i)
+    {
+        anim.UpdateNodeSize(nGateways.Get(i)->GetId(), 7.0, 7.0);
+        anim.UpdateNodeColor(nGateways.Get(i), 255, 0, 0);
+        anim.UpdateNodeDescription(nGateways.Get(i), "Gateway " + std::to_string(i + 1));
+    }
+
+    anim.UpdateNodeSize(networkServer->GetId(), 7.0, 7.0);
+    anim.UpdateNodeColor(networkServer, 0, 255, 0);
+    anim.UpdateNodeDescription(networkServer, "Server");
+    for (uint32_t i = 0; )
 
     ////////////////
     // Simulation //
